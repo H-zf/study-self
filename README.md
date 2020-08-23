@@ -19,3 +19,11 @@
 ## 第七步 查看ssh文件是否配置成功
  ssh -T 这里输入的是你github的仓库名称 不是某一个库的名称 
  显示 You’ve successfully authenticated，but Github does not provide shell access则代表配置ssh成功
+ # 创建项目步骤
+1,在远程仓库创建一个新的仓库
+2,将代码拉下来
+3,搭建项目并且将代码进行提交
+4,npm init -y 配置对应的文件格式 
+5,配置打包文件以及Dev product dev文件是用来作为webpack-dev-server启动用的 prod是用来打包发布使用的
+6,merge是通过解构出来才会存在的 文件配置中属性应该为plugins
+7,安装配置babel 
