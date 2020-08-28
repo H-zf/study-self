@@ -8,5 +8,8 @@
                 }
             }
         ]
+    ],
+    "plugins": [
+        "syntax-dynamic-import"
     ]
 }

@@ -1,5 +1,5 @@
 <template>
-    <div>
+    <div id="app">
         <router-view></router-view>
     </div>
 </template>
@@ -11,8 +11,5 @@ export default {
 </script>>
 
 <style scoped>
-    .router-css {
-        display: flex;
-        width: 200px;
-    }
+    
 </style>
