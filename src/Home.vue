@@ -2,6 +2,13 @@
     <div id="graph">
 
     </div>
+    <!-- <svg width="100%" height="100%" version="1.1"
+        xmlns="http://www.w3.org/2000/svg">
+
+        <path d="M205,410 Q217,390 230,369"
+        style="fill:blue;stroke:red;stroke-width:2"/>
+
+</svg> -->
 </template>
 
 <script>
@@ -12,29 +19,7 @@
                 nodes:[
                     {id:"a",name:'123'},
                     {id:"b",name:'1234'},
-                    {id:'c',name:'12345'},
-                    {id:'d',name:'123456'},
-                    {id:'f',name:'1234567'},
-                    {id:'g',name:'12345678'},
-                    {id:'h',name:'123456789'},
-                    {id:'i',name:'123456789'},
-                    {id:'j',name:'123456789'},
-                    {id:'k',name:'123456789'},
-                    {id:'l',name:'123456789'},
-                    {id:'m',name:'123456789'},
-                    {id:'n',name:'123456789'},
-                    {id:'o',name:'123456789'},
-                    {id:'p',name:'123456789'},
-                    {id:'q',name:'123456789'},
-                    {id:'r',name:'123456789'},
-                    {id:'s',name:'123456789'},
-                    {id:'t',name:'123456789'},
-                    {id:'u',name:'123456789'},
-                    {id:'v',name:'123456789'},
-                    {id:'w',name:'123456789'},
-                    {id:'x',name:'123456789'},
-                    {id:'y',name:'123456789'},
-                    {id:'z',name:'123456789'}
+                    {id:'c',name:'12345'}
                 ],
                 links:[
                     {source:"a",target:"b",id:"link1"},
@@ -43,62 +28,198 @@
                 ]
             }
         },
+        methods: {
+            
+            },
         mounted() {
             let parentNode = document.querySelector('#graph')
             //获取父元素的宽高 
             console.log('parentNode.getBoundingClientRect()',parentNode.getBoundingClientRect())
             let width = parentNode.getBoundingClientRect().width
             let height = parentNode.getBoundingClientRect().height
+            function zoomed(){
+                let transform = d3.zoomTransform(this)
+                g.attr("transform", "translate(" + transform.x + "," + transform.y + ") scale(" + transform.k + ")")
+            }   
             let parentSvg = d3.select('#graph').append("svg")
                         .attr("width", width)
                         .attr("height", height)
+                        .call(d3.zoom().scaleExtent([1, 10]).on("zoom", zoomed))
             let g = parentSvg.append('g')
                         .attr('class','everything')
-            let nodeSvg = g.append("g")
+            let defs = g.append('defs')
+                        .attr('class','defs')
+
+            defs.selectAll('marker')
+                .data(this.links)
+                .enter()
+                .append('marker')
+                .attr('id',d => {
+                    return d.target
+                })
+                .attr('view-box','0 0 12 12')
+                .attr('refX',"6")
+                .attr('refY',"6")
+                .attr('markerWidth','12')
+                .attr('markerHeight','12')
+                .attr('orient','auto')
+                .append('path')
+                .attr('d',"M2,2 L10,6 L2,10 L6,6 L2,2")
+                .attr('fill','#ccc')
+            
+              // 画两个圆试试 todo
+              let linksSvg = g.append("g")
+                        .attr("class", "links")
+                        .selectAll("path")
+                        .data(this.links)
+                        .enter()
+                        .append('path')
+           
+            let nodeParent = g.append("g")
                         .attr("class", "nodes")
                         .selectAll('.node')
                         .data(this.nodes)
                         .enter()
                         .append('g')
-                        .attr('id',(d)=>{
-                            return d.id
-                        })
+                        .attr('id',d => d.id)
+
+            // 分先后的生成两个圆 后面会将之前的进行覆盖
+            let displayNodeSvg = nodeParent
                         .append('circle')
+                        .attr('class','displayCircle')
+                        .attr('id',d => (d.id + '-inherit'))
                         .attr('r','20')
-            // 事件的圆是不是也来一次 找到对应的父元素然后添加相应的圆
-
-            let linksSvg = g.append("g")
-                        .attr("class", "links")
-                        .selectAll('.link')
-                        .data(this.links)
-                        .enter()
-                        .append('g')
-                        .attr('id',(d)=>{
-                            return d.id
-                        })
-
+                        .attr('fill','red')
+                        .attr('stroke','none')
+            let eventNodeSvg = nodeParent
+                        .append('circle')
+                        .attr('class','eventCircle')
+                        .attr('id',d => d.id)
+                        .attr('r','20')
+                        .attr('fill','#0000ff')
+                        .attr('stroke','none')
+            // 事件的圆是不是也来一次 找到对应的父元素然后添加相应的圆 todo
+           
 
             // 对links和nodes进行一次仿真
-            const simulation = d3.forceSimulation().force(this.links,d3.forceLink().id(d => d.id))
-                                .force('change',d3.forceManyBody().strength(d => {
+            const simulation = d3.forceSimulation().force('link',d3.forceLink().id(d => d.id))//绑定id是为了防止报错出missing a
+                                .force('charge',d3.forceManyBody().strength(d => {
+                                    //strength 电荷力  正值代表吸引力 负值代表排斥力 默认为30
                                     const {nodeRadius: radius} = d
                                     const defStr = -80
                                     const radStr = -radius * 4
-                                    return radStr < defStr ? radStr : defStr
+                                    console.log('radStr < defStr',radStr < defStr)
+                                    // return radStr < defStr ? radStr : defStr
+                                    return -80
                                 }))
                                 .force('center',d3.forceCenter(width/2,height/2))
-                                .force('collision',d3.forceCollide().radius(d => d.nodeRadius + 1))
-            simulation.alphaDecay(1 / 10)
+                                .force('collision',d3.forceCollide(50).strength(0.2).iterations(5))
+            simulation.alphaDecay(0.999)
 
             simulation.nodes(this.nodes)
-            // simulation.force('link').link(this.links)
+            simulation.force('link').links(this.links) //线的仿真
+            function computedPath(source,target,linkSize,linkIndex){
+                let n1 = displayNodeSvg.select(`[id="${source.id}"]`)
+                let n2 = displayNodeSvg.select(`[id="${target.id}"]`)
+                let x1 = source.x,
+                y1 = source.y,
+                x2 = target.x,
+                y2 = target.y,
+                r1 = source.r || 20,
+                r2 = target.r || 20,
+                path = '',
+                offsetArc,
+                rotateArc,
+                startX,
+                startY,
+                endX,
+                endY,
+                curveLength,
+                cx1 = 0,
+                cy1 = 0,
+                cx2 = 0,
+                cy2 = 0,
+                textLength,
+                tx = 0,
+                ty = 0,
+                tReverse,
+                transform = '',
+                verticalArc,
+                linkLength,
+                offsetLength,
+                qx,
+                qy,
+                angle
+                if(source.id === target.id){
+                    let arc = 2 * Math.PI / linkSize * (linkIndex - 1)
+                    angle = arc * 180 / Math.PI
+                    offsetArc = 15 * Math.PI / 180
+                    rotateArc = 90 * Math.PI / 180
+                    startX = x1 + Math.cos(arc - offsetArc + rotateArc) * r1
+                    startY = y1 + Math.sin(arc - offsetArc + rotateArc) * r1
+                    endX = x1 + Math.cos(arc + offsetArc + rotateArc) * (r1 + 12)
+                    endY = y1 + Math.sin(arc + offsetArc + rotateArc) * (r1 + 12)
+                    curveLength = 100
+                    cx1 = startX + Math.cos(arc - offsetArc + rotateArc) * curveLength
+                    cy1 = startY + Math.sin(arc - offsetArc + rotateArc) * curveLength
+                    cx2 = endX + Math.cos(arc + offsetArc + rotateArc) * curveLength
+                    cy2 = endY + Math.sin(arc + offsetArc + rotateArc) * curveLength
+                    textLength = curveLength - 20
+                    tx = (startX + Math.cos(arc - offsetArc + rotateArc) * textLength + endX + Math.cos(arc + offsetArc + rotateArc) * textLength / 2)
+                    ty = (startY + Math.sin(arc - offsetArc + rotateArc) * textLength + endY + Math.sin(arc + offsetArc + rotateArc) * textLength / 2)
+                    tReverse = angle > 90 && angle < 270 ? 180 : 0
+                    path = `M${startX},${startY},C${cx1},${cy1},${cx2},${cy2},${endX},${endY}`
+                    transform = `translate(${tx},${ty}) rotate(${angle + tReverse})`
+                } else {
+                    let direct = (linkIndex % 2 === 0 ? 1 : -1) * (source.id < target.id ? 1 : -1)
+                    linkIndex = linkSize % 2 === 0 ? Math.floor((linkSize + 1) / 2) * direct : Math.floor( linkSize / 2) * direct
+                    let arc = Math.atan2(y1 - y2,x2 - x1) //  两个节点圆心连线斜率对应的弧度
+                    console.log('arc----',arc)
+                    angle = arc * 180 / Math.PI // 弧度对应的角度
+                    console.log('angle----',angle)
+                    offsetArc = linkIndex * 15 * Math.PI / 180
+                    console.log('offsetArc----',offsetArc)
+                    startX = x1 + Math.cos(arc + offsetArc) * r1
+                    startY = y1 - Math.sin(arc + offsetArc) * r1
+                    endX = x2 - Math.cos(arc - offsetArc) * (r2 + 6)
+                    endY = y2 + Math.sin(arc - offsetArc) * (r2 + 6)
+                    verticalArc = - Math.atan2(x2 - x1,y1 - y2)
+                    linkLength = Math.sqrt((Math.pow(endX - startX,2) + Math.pow(endY - startY,2))) // 起点与终点连线的长度
+                    offsetLength = linkLength / 2 / linkSize * linkIndex // 根据线条的总数和序号计算出的曲线偏移长度
+                    qx = (startX + endX) / 2 - Math.cos(verticalArc) * offsetLength
+                    qy = (startY + endY) / 2 + Math.sin(verticalArc) * offsetLength
+                    tx = angle > -90 && angle < 90 ? (startX + endX) / 2 - Math.cos(verticalArc) * (offsetLength / 2 + 4) : (startX + endX) / 2 - Math.cos(verticalArc) * (offsetLength / 2 - 4)
+                    ty = angle > -90 && angle < 90 ? (startY + endY) / 2 - Math.sin(verticalArc) * (offsetLength / 2 + 4) : (startY + endY) / 2 - Math.sin(verticalArc) * (offsetLength / 2 - 4)
+                    tReverse = angle > 90 || angle < -90 ? 180 : 0
+                    console.log('startX----',startX)
+                    path = {
+                        startX:Math.ceil(startX),
+                        startY:Math.ceil(startY),
+                        qx:Math.ceil(qx),
+                        qy:Math.ceil(qy),
+                        endX:Math.ceil(endX),
+                        endY:Math.ceil(endY)
+                    }
+            //         path = `M${startX},${startY} Q${qx},${qy} ${endX},${endY}` //二次贝塞尔曲线
+                    transform = `translate(${tx},${ty}) rotate(${-angle + tReverse})`
+            }
+
+                return {path ,transform}
+            }
             function ticked(){
-                nodeSvg.attr("cx", function(d) {
-                    return d.x
+                displayNodeSvg.attr("cx", d => d.x)
+                              .attr("cy", d => d.y)
+                eventNodeSvg.attr("cx", d => d.x)
+                            .attr("cy", d => d.y)
+                linksSvg.attr("d", (d) => {
+                    let path = computedPath(d.source,d.target,1,1)
+                    return `M${path.path.startX},${path.path.startY} Q${path.path.qx},${path.path.qy} ${path.path.endX},${path.path.endY}`
+
                 })
-                .attr("cy", function(d) {
-                    return d.y
-                })
+                .attr('marker-end',d => 'url(#a)')
+                .attr('fill','red')
+                .attr('stroke','red')
+                .attr('stroke-width','1')
             }
             simulation.on('tick',() => {
                 ticked()
