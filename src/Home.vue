@@ -20,7 +20,6 @@
                     {id:"a",name:'123'},
                     {id:"b",name:'1234'},
                     {id:'c',name:'12345'},
-                    {id:'c',name:'12345'},
                     {id:'d',name:'12345'},
                     {id:'e',name:'12345'},
                     {id:'f',name:'12345'},
@@ -33,15 +32,15 @@
                 links:[
                     {source:"a",target:"b",id:"link1"},
                     {source:"b",target:"c",id:"link2"},
-                    {source:"c",target:"a",id:"link3"},
-                    {source:"d",target:"c",id:"link3"},
-                    {source:"e",target:"f",id:"link3"},
-                    {source:"f",target:"d",id:"link3"},
-                    {source:"g",target:"f",id:"link3"},
-                    {source:"h",target:"g",id:"link3"},
-                    {source:"i",target:"h",id:"link3"},
-                    {source:"j",target:"i",id:"link3"},
-                    {source:"k",target:"k",id:"link3"}
+                    {source:"c",target:"d",id:"link3"},
+                    {source:"d",target:"e",id:"link4"},
+                    {source:"e",target:"f",id:"link5"},
+                    {source:"f",target:"g",id:"link6"},
+                    {source:"g",target:"h",id:"link7"},
+                    {source:"h",target:"i",id:"link8"},
+                    {source:"i",target:"j",id:"link9"},
+                    {source:"j",target:"k",id:"link10"},
+                    {source:"k",target:"a",id:"link11"}
                 ]
             }
         },
@@ -49,6 +48,7 @@
             
         },
         mounted() {
+            let that = this
             let parentNode = document.querySelector('#graph')
             //获取父元素的宽高 
             console.log('parentNode.getBoundingClientRect()',parentNode.getBoundingClientRect())
@@ -63,18 +63,56 @@
                         .on('start',function(){
                             simulation.stop()
                         })
-                        .on('end',function(){
+                        .on('end',function(d){
                             d.fixed = true; // of course set the node to fixed so the force doesn't include the node in its auto positioning stuff
-                            ticked()
-                            simulation.resume()
+                            // ticked()
+                            d3.select(this).select("[id="+d.id+"]").attr('cx',d => d.x).attr('cy',d => d.y)
+                            d3.select(this).select("[id="+d.id+"-inherit]").attr('cx',d => d.x).attr('cy',d => d.y)
+
+                            console.log("that.links",that.links)
+                            let c = that.links.filter(item => item.source.id === d.id || item.target.id === d.id) 
+                            // d3中的操作都是找到对应的dom然后添加属性来进行操作 找到元素重新设置属性 和 jq一样 找到元素修改属性
+                            // 找元素有两种方法 一种是全局的通过d3.select(this)  还有一种就是后代选择 filter
+                            c.forEach((item) => {
+                                let path = computedPath(item.source,item.target,1,1)
+                                linksSvg.filter("[id="+item.id+"]").attr("d", (d) => {
+                                    if(!path.path.qx){
+                                        return `M${path.path.startX},${path.path.startY} C${path.path.cx1},${path.path.cy1},${path.path.cx2},${path.path.cy2},${path.path.endX},${path.path.endY}`
+                                    }
+                                    return `M${path.path.startX},${path.path.startY} Q${path.path.qx},${path.path.qy} ${path.path.endX},${path.path.endY}`
+
+                                })
+                            })
                         })
                         .on('drag',function(d){
+                            console.log("dragdom",d3.select(this))
+                            console.log('d3.select(this).datum()',d3.select(this).datum())
                             // d.px += d3.event.dx
                             // d.py += d3.event.dy
                             // 已将数据中的x y进行了修改 此时调用ticked只是重新计算位置
                             d.x += d3.event.dx //d3.event.dx是相当于移动的时候相对于上一次移动了多少 所以要加等
                             d.y += d3.event.dy
-                            ticked() //此时ticked 相当于重新计算一次坐标
+                            d3.select(this).select("[id="+d.id+"]").attr('cx',d => d.x).attr('cy',d => d.y)
+                            
+                            d3.select(this).select("[id="+d.id+"-inherit]").attr('cx',d => d.x).attr('cy',d => d.y)
+
+                            console.log("that.links",that.links)
+                            let c = that.links.filter(item => item.source.id === d.id || item.target.id === d.id) 
+                            // d3中的操作都是找到对应的dom然后添加属性来进行操作
+                            // 找元素有两种方法 一种是全局的通过d3.select(this)  还有一种就是后代选择 filter
+                            c.forEach((item) => {
+                                let path = computedPath(item.source,item.target,1,1)
+                                linksSvg.filter("[id="+item.id+"]").attr("d", (d) => {
+                                    console.log('links',d)
+                                    // let path = computedPath(d.source,d.target,1,1)
+                                    if(!path.path.qx){
+                                        return `M${path.path.startX},${path.path.startY} C${path.path.cx1},${path.path.cy1},${path.path.cx2},${path.path.cy2},${path.path.endX},${path.path.endY}`
+                                    }
+                                    return `M${path.path.startX},${path.path.startY} Q${path.path.qx},${path.path.qy} ${path.path.endX},${path.path.endY}`
+
+                                })
+                            })
+                            // ticked() //此时ticked 相当于重新计算一次坐标
                         })
             let parentSvg = d3.select('#graph').append("svg")
                         .attr("width", width)
@@ -109,6 +147,7 @@
                         .data(this.links)
                         .enter()
                         .append('path')
+                        .attr('id',d => d.id)
            
             let nodeParent = g.append("g")
                         .attr("class", "nodes")
