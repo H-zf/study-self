@@ -17,17 +17,18 @@
         data() {
             return {
                 nodes:[
-                    {id:"a",name:'123'},
-                    {id:"b",name:'1234'},
-                    {id:'c',name:'12345'},
-                    {id:'d',name:'12345'},
-                    {id:'e',name:'12345'},
-                    {id:'f',name:'12345'},
-                    {id:'g',name:'12345'},
-                    {id:'h',name:'12345'},
-                    {id:'i',name:'12345'},
-                    {id:'j',name:'12345'},
-                    {id:'k',name:'12345'},
+                    //此时的r可以根据数据来判断type来确认大小
+                    {id:"a",name:'123',type:'init',r:40},
+                    {id:"b",name:'1234',type:'init',r:40},
+                    {id:'c',name:'12345',type:'init',r:40},
+                    {id:'d',name:'12345',type:'main',r:30},
+                    {id:'e',name:'12345',type:'main',r:30},
+                    {id:'f',name:'12345',type:'main',r:30},
+                    {id:'g',name:'12345',type:'comm',r:20},
+                    {id:'h',name:'12345',type:'comm',r:20},
+                    {id:'i',name:'12345',type:'comm',r:20},
+                    {id:'j',name:'12345',type:'default',r:20},
+                    {id:'k',name:'12345',type:'default',r:20}
                 ],
                 links:[
                     {source:"a",target:"b",id:"link1"},
@@ -69,7 +70,6 @@
                             d3.select(this).select("[id="+d.id+"]").attr('cx',d => d.x).attr('cy',d => d.y)
                             d3.select(this).select("[id="+d.id+"-inherit]").attr('cx',d => d.x).attr('cy',d => d.y)
 
-                            console.log("that.links",that.links)
                             let c = that.links.filter(item => item.source.id === d.id || item.target.id === d.id) 
                             // d3中的操作都是找到对应的dom然后添加属性来进行操作 找到元素重新设置属性 和 jq一样 找到元素修改属性
                             // 找元素有两种方法 一种是全局的通过d3.select(this)  还有一种就是后代选择 filter
@@ -96,7 +96,6 @@
                             
                             d3.select(this).select("[id="+d.id+"-inherit]").attr('cx',d => d.x).attr('cy',d => d.y)
 
-                            console.log("that.links",that.links)
                             let c = that.links.filter(item => item.source.id === d.id || item.target.id === d.id) 
                             // d3中的操作都是找到对应的dom然后添加属性来进行操作
                             // 找元素有两种方法 一种是全局的通过d3.select(this)  还有一种就是后代选择 filter
@@ -122,13 +121,24 @@
                         .attr('class','everything')
             let defs = g.append('defs')
                         .attr('class','defs')
-
+            
+            let markerData = ['init','main','comm','default']
             defs.selectAll('marker')
-                .data(this.links)
+                .data(markerData)
                 .enter()
                 .append('marker')
                 .attr('id',d => {
-                    return d.target
+                    let id = ''
+                    if(d === 'init'){
+                        id = 'initArrow'
+                    } else if(d === 'main'){
+                        id = 'mainArrow'
+                    } else if(d === 'comm'){
+                        id = 'commArrow'
+                    } else {
+                        id = 'defaultArrow'
+                    }
+                    return id
                 })
                 .attr('view-box','0 0 12 12')
                 .attr('refX',"6")
@@ -138,8 +148,20 @@
                 .attr('orient','auto')
                 .append('path')
                 .attr('d',"M2,2 L10,6 L2,10 L6,6 L2,2")
-                .attr('fill','#ccc')
-            
+                .attr('fill',d => {
+                    let fill = ''
+                    if(d === 'init'){
+                        fill = 'red'
+                    } else if(d === 'main'){
+                        fill = 'blue'
+                    } else if(d === 'comm') {
+                        fill = 'green'
+                    } else [
+                        fill = '#ccc'
+                    ]
+                    return fill
+                })
+                let globalLineStyle = {}
               // 画两个圆试试 todo
               let linksSvg = g.append("g")
                         .attr("class", "links")
@@ -148,6 +170,35 @@
                         .enter()
                         .append('path')
                         .attr('id',d => d.id)
+                        .attr('cursor','pointer')
+                        .on('mouseenter',(d) => {
+                            // style某个元素的时候 如果提供参数 则是设置元素的值  如果没有参数则是获取某个元素的值
+                            globalLineStyle = {
+                                stroke:d3.select("[id="+d.id+"]").style('stroke'),
+                                'marker-end':d3.select("[id="+d.id+"]").style('marker-end')
+                            }
+                            
+                            let preStyle = ''
+                            let colorArrow = '' // initArrow
+                            if(d.target.type === 'init'){
+                                preStyle = 'red'
+                                colorArrow = 'initArrow'
+                            } else if(d.target.type === 'main'){
+                                preStyle = 'blue'
+                                colorArrow = 'mainArrow'
+                            } else if(d.target.type === 'comm'){
+                                preStyle = 'green'
+                                colorArrow = 'commArrow'
+                            } else {
+                                preStyle = '#ccc'
+                                colorArrow = 'defaultArrow'
+                            }
+                            
+                            d3.select("[id="+d.id+"]").style('stroke',preStyle).style('marker-end',"url(#"+colorArrow+")")
+                        })
+                        .on('mouseleave',(d)=>{
+                            d3.select("[id="+d.id+"]").style('stroke',globalLineStyle['stroke']).style('marker-end',globalLineStyle['marker-end'])
+                        })
            
             let nodeParent = g.append("g")
                         .attr("class", "nodes")
@@ -163,16 +214,66 @@
                         .append('circle')
                         .attr('class','displayCircle')
                         .attr('id',d => (d.id + '-inherit'))
-                        .attr('r','20')
-                        .attr('fill','red')
+                        .attr('r',(d) => {
+                            let r = 0
+                            if(d.type === 'init'){
+                                r = 40
+                            } else if(d.type === 'main'){
+                                r = 30
+                            } else {
+                                r = 20
+                            }
+                            return r
+                        })
+                        .attr('fill',(d) => {
+                            let color = ''
+                            if(d.type === 'init'){
+                                color = 'red'
+                            } else if(d.type === 'main'){
+                                color = 'blue'
+                            } else if(d.type === 'comm'){
+                                color = 'green'
+                            } else [
+                                color = '#ccc'
+                            ]
+                            return color
+                        })
                         .attr('stroke','none')
             let eventNodeSvg = nodeParent
                         .append('circle')
                         .attr('class','eventCircle')
                         .attr('id',d => d.id)
-                        .attr('r','20')
-                        .attr('fill','#0000ff')
+                        .attr('r',(d) => {
+                            let r = 0
+                            if(d.type === 'init'){
+                                r = 40
+                            } else if(d.type === 'main'){
+                                r = 30
+                            } else {
+                                r = 20
+                            }
+                            return r
+                        })
+                        .attr('fill',(d) => {
+                            let color = ''
+                            if(d.type === 'init'){
+                                color = 'red'
+                            } else if(d.type === 'main'){
+                                color = 'blue'
+                            } else if(d.type === 'comm'){
+                                color = 'green'
+                            } else [
+                                color = "#ccc"
+                            ]
+                            return color
+                        })
                         .attr('stroke','none')
+                        .on('mouseenter',() => {
+                            console.log('触发了')
+                        })
+                        .on('mouseleave',() => {
+                            console.log('结束了')
+                        })
             // 事件的圆是不是也来一次 找到对应的父元素然后添加相应的圆 todo
            
 
@@ -185,11 +286,11 @@
                                     const radStr = -radius * 4
                                     console.log('radStr < defStr',radStr < defStr)
                                     // return radStr < defStr ? radStr : defStr
-                                    return -80
+                                    return -500
                                 }))
                                 .force('center',d3.forceCenter(width/2,height/2))
                                 .force('collision',d3.forceCollide(50).strength(0.2).iterations(5))
-            simulation.alphaDecay(0.999)
+            simulation.alphaDecay(0.1)
 
             simulation.nodes(this.nodes)
             simulation.force('link').links(this.links) //线的仿真
@@ -225,6 +326,9 @@
                 qx,
                 qy,
                 angle
+
+                console.log('source',source)
+                console.log('target',target)
                 if(source.id === target.id){
                     let arc = 2 * Math.PI / linkSize * (linkIndex - 1)
                     angle = arc * 180 / Math.PI
@@ -305,9 +409,9 @@
                     return `M${path.path.startX},${path.path.startY} Q${path.path.qx},${path.path.qy} ${path.path.endX},${path.path.endY}`
 
                 })
-                .attr('marker-end',d => 'url(#a)')
+                .attr('marker-end',d => 'url(#defaultArrow)')
                 .attr('fill','none')
-                .attr('stroke','red')
+                .attr('stroke','#ccc')
                 .attr('stroke-width','1')
             }
             simulation.on('tick',() => {
