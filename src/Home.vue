@@ -49,6 +49,8 @@
             
         },
         mounted() {
+
+            //移入使用highlight作为标识 点击作为select作为标识 在点击的时候判断是否高亮 如果是将高亮取消 设置选中  在移入的时候判断是否选中 如果选中就不用做处理
             let that = this
             let parentNode = document.querySelector('#graph')
             //获取父元素的宽高 
@@ -95,7 +97,7 @@
                             d3.select(this).select("[id="+d.id+"]").attr('cx',d => d.x).attr('cy',d => d.y)
                             
                             d3.select(this).select("[id="+d.id+"-inherit]").attr('cx',d => d.x).attr('cy',d => d.y)
-
+                            
                             let c = that.links.filter(item => item.source.id === d.id || item.target.id === d.id) 
                             // d3中的操作都是找到对应的dom然后添加属性来进行操作
                             // 找元素有两种方法 一种是全局的通过d3.select(this)  还有一种就是后代选择 filter
@@ -117,6 +119,31 @@
                         .attr("width", width)
                         .attr("height", height)
                         .call(d3.zoom().scaleExtent([1, 10]).on("zoom", zoomed))
+                        .on('click',() => {
+                            if(d3.event.target.nodeName === 'svg'){
+                                let a = ''  // 此操作只是为了方便找到上一次对应的元素然后重新计算path
+                                d3.select('[class*="select"]').attr('r',(k)=>{
+                                    a = k.id //找到上一次的id
+                                    return k.r
+                                }).style('opacity','1').classed('select',false)
+                                let c = that.links.filter(item => item.source.id === a || item.target.id === a)
+                                // d3中的操作都是找到对应的dom然后添加属性来进行操作
+                                // 找元素有两种方法 一种是全局的通过d3.select(this)  还有一种就是后代选择 filter
+                                c.forEach((item) => {
+                                    let path = computedPath(item.source,item.target,1,1)
+                                    linksSvg.filter("[id="+item.id+"]").attr("d", (d) => {
+                                        if(!path.path.qx){
+                                            return `M${path.path.startX},${path.path.startY} C${path.path.cx1},${path.path.cy1},${path.path.cx2},${path.path.cy2},${path.path.endX},${path.path.endY}`
+                                        }
+                                        return `M${path.path.startX},${path.path.startY} Q${path.path.qx},${path.path.qy} ${path.path.endX},${path.path.endY}`
+
+                                    })
+                                })
+                                eventNodeSvg.style('opacity','1')
+                                displayNodeSvg.style('opacity','1')
+                            }
+                            console.log('d3.d3.event',d3.event)
+                        })
             let g = parentSvg.append('g')
                         .attr('class','everything')
             let defs = g.append('defs')
@@ -206,7 +233,6 @@
                         .data(this.nodes)
                         .enter()
                         .append('g')
-                        .attr('id',d => d.id)
                         .call(drag)
 
             // 分先后的生成两个圆 后面会将之前的进行覆盖
@@ -239,6 +265,9 @@
                             return color
                         })
                         .attr('stroke','none')
+
+            let globalNodeStyle = {}
+            let preNodeId = ''
             let eventNodeSvg = nodeParent
                         .append('circle')
                         .attr('class','eventCircle')
@@ -268,10 +297,86 @@
                             return color
                         })
                         .attr('stroke','none')
-                        .on('mouseenter',() => {
-                            console.log('触发了')
+                        .on('click',(d) => {
+                            // 点击之前是可以判断的 然后再重新设置先得类名  如果想记住上次的操作 可以通过添加属性的方法  在每次点击之前找到这个属性就找到了上一次的元素
+                            console.log('data------',d3.select('[class*="select"]'))
+                            let a = ''  // 此操作只是为了方便找到上一次对应的元素然后重新计算path
+                            d3.select('[class*="select"]').attr('r',(k)=>{
+                                a = k.id //找到上一次的id
+                                return k.r
+                            }).style('opacity','1').classed('select',false)
+                            let c = that.links.filter(item => item.source.id === a || item.target.id === a)
+                            // d3中的操作都是找到对应的dom然后添加属性来进行操作
+                            // 找元素有两种方法 一种是全局的通过d3.select(this)  还有一种就是后代选择 filter
+                            c.forEach((item) => {
+                                let path = computedPath(item.source,item.target,1,1)
+                                linksSvg.filter("[id="+item.id+"]").attr("d", (d) => {
+                                    if(!path.path.qx){
+                                        return `M${path.path.startX},${path.path.startY} C${path.path.cx1},${path.path.cy1},${path.path.cx2},${path.path.cy2},${path.path.endX},${path.path.endY}`
+                                    }
+                                    return `M${path.path.startX},${path.path.startY} Q${path.path.qx},${path.path.qy} ${path.path.endX},${path.path.endY}`
+
+                                })
+                            })
+                            d3.select('[id='+ d.id +']').classed('select',true) //点击添加一个class
+                            // 点击时候判断是否还有其他的元素被选中
+                            eventNodeSvg.style('opacity','0.2')
+                            displayNodeSvg.style('opacity','0.2')
+                            d3.select('[id='+ d.id +'-inherit]').style('opacity','1')
                         })
-                        .on('mouseleave',() => {
+                        .on('mouseenter',(d) => {
+                            globalNodeStyle = {
+                                r:d3.select("[id="+d.id+"]").style('r'),
+                                opacity:d3.select("[id="+d.id+"]").style('opacity')
+                            }
+                            if(globalNodeStyle.opacity === '0.2'){
+                                // opacity不管是0.2 也好还是 1也好 我的inherit的opacity样式永远都是1
+                                d3.select("[id="+d.id+"]").attr('r',(d) => d.r + 10)
+                                d3.select("[id="+d.id+"-inherit]").style('opacity','1')
+                            } else {
+                                d3.select("[id="+d.id+"]").attr('r',(d) => d.r + 10).style('opacity','0.2')
+                                d3.select("[id="+d.id+"-inherit]").style('opacity','1')
+                            }
+                            d.r = d.r + 10 // 改原始数据再重新计算 
+                            let c = that.links.filter(item => item.source.id === d.id || item.target.id === d.id)
+                            // d3中的操作都是找到对应的dom然后添加属性来进行操作
+                            // 找元素有两种方法 一种是全局的通过d3.select(this)  还有一种就是后代选择 filter
+                            c.forEach((item) => {
+                                let path = computedPath(item.source,item.target,1,1)
+                                linksSvg.filter("[id="+item.id+"]").attr("d", (d) => {
+                                    if(!path.path.qx){
+                                        return `M${path.path.startX},${path.path.startY} C${path.path.cx1},${path.path.cy1},${path.path.cx2},${path.path.cy2},${path.path.endX},${path.path.endY}`
+                                    }
+                                    return `M${path.path.startX},${path.path.startY} Q${path.path.qx},${path.path.qy} ${path.path.endX},${path.path.endY}`
+
+                                })
+                            })
+                        })
+                        .on('mouseleave',(d) => {
+                            d.r = d.r - 10 //改原始数据再重新计算
+                            
+                            if(!d3.select('[id='+ d.id +']').attr('class').includes('select')){
+                                if(d3.select("[id="+d.id+"-inherit]").style('opacity') === '1'){
+                                    d3.select("[id="+d.id+"-inherit]").style('opacity',"0.2")
+                                }
+                                d3.select("[id="+d.id+"]").attr('r',globalNodeStyle['r']).style('opacity',globalNodeStyle['opacity'] || 1)
+                                let c = that.links.filter(item => item.source.id === d.id || item.target.id === d.id) 
+                                // d3中的操作都是找到对应的dom然后添加属性来进行操作
+                                // 找元素有两种方法 一种是全局的通过d3.select(this)  还有一种就是后代选择 filter
+                                c.forEach((item) => {
+                                    let path = computedPath(item.source,item.target,1,1)
+                                    linksSvg.filter("[id="+item.id+"]").attr("d", (d) => {
+                                        // let path = computedPath(d.source,d.target,1,1)
+                                        if(!path.path.qx){
+                                            return `M${path.path.startX},${path.path.startY} C${path.path.cx1},${path.path.cy1},${path.path.cx2},${path.path.cy2},${path.path.endX},${path.path.endY}`
+                                        }
+                                        return `M${path.path.startX},${path.path.startY} Q${path.path.qx},${path.path.qy} ${path.path.endX},${path.path.endY}`
+
+                                    })
+                                })
+                            } else {
+
+                            }
                             console.log('结束了')
                         })
             // 事件的圆是不是也来一次 找到对应的父元素然后添加相应的圆 todo
@@ -327,8 +432,6 @@
                 qy,
                 angle
 
-                console.log('source',source)
-                console.log('target',target)
                 if(source.id === target.id){
                     let arc = 2 * Math.PI / linkSize * (linkIndex - 1)
                     angle = arc * 180 / Math.PI
@@ -363,11 +466,8 @@
                     let direct = (linkIndex % 2 === 0 ? 1 : -1) * (source.id < target.id ? 1 : -1)
                     linkIndex = linkSize % 2 === 0 ? Math.floor((linkSize + 1) / 2) * direct : Math.floor( linkSize / 2) * direct
                     let arc = Math.atan2(y1 - y2,x2 - x1) //  两个节点圆心连线斜率对应的弧度
-                    console.log('arc----',arc)
                     angle = arc * 180 / Math.PI // 弧度对应的角度
-                    console.log('angle----',angle)
                     offsetArc = linkIndex * 15 * Math.PI / 180
-                    console.log('offsetArc----',offsetArc)
                     startX = x1 + Math.cos(arc + offsetArc) * r1
                     startY = y1 - Math.sin(arc + offsetArc) * r1
                     endX = x2 - Math.cos(arc - offsetArc) * (r2 + 6)
@@ -380,7 +480,6 @@
                     tx = angle > -90 && angle < 90 ? (startX + endX) / 2 - Math.cos(verticalArc) * (offsetLength / 2 + 4) : (startX + endX) / 2 - Math.cos(verticalArc) * (offsetLength / 2 - 4)
                     ty = angle > -90 && angle < 90 ? (startY + endY) / 2 - Math.sin(verticalArc) * (offsetLength / 2 + 4) : (startY + endY) / 2 - Math.sin(verticalArc) * (offsetLength / 2 - 4)
                     tReverse = angle > 90 || angle < -90 ? 180 : 0
-                    console.log('startX----',startX)
                     path = {
                         startX:Math.ceil(startX),
                         startY:Math.ceil(startY),
