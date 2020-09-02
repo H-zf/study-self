@@ -13,11 +13,13 @@
 
 <script>
     import * as d3 from 'd3'
+
+    // 移入的时候就判断是否有被选中的元素 有就是一套逻辑 没有就是另外一套逻辑这样逻辑会清晰一点
     export default {
         data() {
             return {
                 nodes:[
-                    //此时的r可以根据数据来判断type来确认大小
+                    //此时的r可以根据数据来判断type来确认大小 数据都是可以根据后台的字段来进行判断来重写
                     {id:"a",name:'123',type:'init',r:40},
                     {id:"b",name:'1234',type:'init',r:40},
                     {id:'c',name:'12345',type:'init',r:40},
