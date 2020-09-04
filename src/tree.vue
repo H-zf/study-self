@@ -19,10 +19,10 @@ const dataset = {
         {
             name:"浙江",
             children:[
-                {name:"杭州" ,value:100},
-                {name:"宁波",value:100},
-                {name:"温州",value:100},
-                {name:"绍兴",value:100}
+                {name:"杭州" },
+                {name:"宁波"},
+                {name:"温州"},
+                {name:"绍兴"}
             ]
         },
         {

@@ -5,6 +5,7 @@ import View from '@/View.vue'
 import About from '@/About.vue'
 import Test from '@/Test.vue'
 import Tree from '@/Tree.vue'
+import Computed from '@/Computed.vue'
 Vue.use(VueRouter)
 export default new VueRouter({
     routes: [
@@ -12,8 +13,10 @@ export default new VueRouter({
             path: '/',
             // name: 'home',
             // component: Home,
-            name: 'Tree',
-            component: Tree,
+            // name: 'Tree',
+            // component: Tree,
+            name: 'Computed',
+            component: Computed,
             // name: 'Test',
             // component: Test,
             // redirect: 'view/1',//此属性的设置相当于父路由里面默认展开某个子路由
