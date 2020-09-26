@@ -6,6 +6,7 @@ import About from '@/About.vue'
 import Test from '@/Test.vue'
 import Tree from '@/Tree.vue'
 import Computed from '@/Computed.vue'
+import Checkbox from '@/checkbox/checkbox.vue'
 Vue.use(VueRouter)
 export default new VueRouter({
     routes: [
@@ -15,8 +16,8 @@ export default new VueRouter({
             // component: Home,
             // name: 'Tree',
             // component: Tree,
-            name: 'Computed',
-            component: Computed,
+            name: 'Checkbox',
+            component: Checkbox,
             // name: 'Test',
             // component: Test,
             // redirect: 'view/1',//此属性的设置相当于父路由里面默认展开某个子路由
