@@ -19,6 +19,7 @@
 <script>
 import Left from './left.vue'
 import Right from './right.vue'
+import axios from 'axios'
 export default {
     components:{
         Left,
@@ -41,6 +42,12 @@ export default {
         multipleDel(multiple){
             this.multiple = multiple
         }
+    },
+    mounted(){
+        // axios.defaults.baseURL = 'http://127.0.0.1:8082/api'
+        axios.post('/info.mock').then((res) => {
+            console.log('res===',res)
+        })
     }
 }
 </script>

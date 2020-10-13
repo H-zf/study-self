@@ -8,10 +8,14 @@ module.exports = merge(baseConfig,{
     devtool: 'inline-source-map',
     devServer: {
         contentBase: path.resolve(__dirname, '../dist'),
-        host: 'localhost', // can be overwritten by process.env.HOST
-        port: 8082, // can be overwritten by process.env.PORT, if port is in use, a free one will be determined
+        // host: 'localhost', // can be overwritten by process.env.HOST
         open: true,
-        quiet: true // 结合FriendlyErrorsWebpackPlugin 将打包出来的日志进行清除
+        quiet: true, // 结合FriendlyErrorsWebpackPlugin 将打包出来的日志进行清除
+        proxy: {
+            '/*.mock':{
+                target: 'http://127.0.0.1:5021'
+            }
+        }
     },
     plugins:[
         new FriendlyErrorsWebpackPlugin({

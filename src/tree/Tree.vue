@@ -1,0 +1,110 @@
+<template>
+    <div>
+        <node
+            :node="treeData"
+        ></node>
+    </div>
+</template>
+
+<script>
+import Node from './node/Node.vue'
+export default {
+    components:{
+        Node
+    },
+    data(){
+        return {
+            treeData:[
+                {
+                    level:0, 
+                    name:'tree1', 
+                    key:'tree1', 
+                    expand: true,
+                    children:[
+                        {
+                            level:1,
+                            name:'tree-node1',
+                            key:'tree-node1',
+                            expand:true,
+                            children:[
+                                {
+                                    level:2,
+                                    name:'tree-node1-node1',
+                                    key:'tree-node1-node1'
+                                },
+                                {
+                                    level:2,
+                                    name:'tree-node1-node2',
+                                    key:'tree-node1-node2'
+                                }
+                            ]
+                        },
+                        {
+                            level:1,
+                            name:'tree-node2',
+                            key:'tree-node2',
+                            expand:true,
+                            children:[
+                                {
+                                    level:2,
+                                    name:'tree-node2-node1',
+                                    key:'tree-node2-node1'
+                                },
+                                {
+                                    level:2,
+                                    name:'tree-node2-node2',
+                                    key:'tree-node2-node2'
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    level:0, 
+                    name:'tree2', 
+                    key:'tree2', 
+                    expand:true,
+                    children:[
+                        {
+                            level:1,
+                            name:'tree2-node1',
+                            key:'tree2-node1',
+                            expand:true,
+                            children:[
+                                {
+                                    level:2,
+                                    name:'tree2-node1-node1',
+                                    key:'tree2-node1-node1'
+                                },
+                                {
+                                    level:2,
+                                    name:'tree2-node1-node2',
+                                    key:'tree2-node1-node2'
+                                }
+                            ]
+                        },
+                        {
+                            level:1,
+                            name:'tree2-node2',
+                            key:'tree2-node2',
+                            expand:true,
+                            children:[
+                                {
+                                    level:2,
+                                    name:'tree2-node2-node1',
+                                    key:'tree2-node2-node1'
+                                },
+                                {
+                                    level:2,
+                                    name:'tree2-node2-node2',
+                                    key:'tree2-node2-node2'
+                                }
+                            ]
+                        }
+                    ]
+                },
+            ]
+        }
+    }
+}
+</script>
