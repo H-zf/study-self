@@ -1,7 +1,7 @@
 # stydy-self
 
 项目搭建的环境
-## 配置ssh
+## 配置
 ## 第一步
  git config --global user.name "github项目地址名称"
 ## 第二步
@@ -10,13 +10,13 @@
  查看是否已经存在ssh
  cd ~/.ssh
  ls.
-## 第四步 生成ssh（不存在ssh）
+## 生成ssh（不存在ssh）
  ssh-keygen -t rsa -C '上面输入的邮箱地址'
  一路回车就可以了 默认
-## 第五步 查看ssh
+## 查看ssh
  cat ~/.ssh/id_rsa.pub 复制一份
-## 第六步 将公钥添加到远程的仓库
-## 第七步 查看ssh文件是否配置成功
+## 将公钥添加到远程的仓库
+## 查看ssh文件是否配置成功
  ssh -T 这里输入的是你github的仓库名称 不是某一个库的名称 
  显示 You’ve successfully authenticated，but Github does not provide shell access则代表配置ssh成功
  # 创建项目步骤
